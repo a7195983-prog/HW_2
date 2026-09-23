@@ -1,9 +1,13 @@
+from functools import cache
+
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated, IsAdminUser, AllowAny
 from apps.testapp.models import CustomUser
 from apps.testapp.permissions import IsModeratorOrAdmin
 from apps.testapp.services import get_google_access_token, get_google_user_info
+from apps.testapp.tasks import User, send_welcome_email_task
+from django.core.cache import cache
 
 
 # Эндпоинт 1: Доступен ЛЮБОМУ авторизованному юзеру
@@ -22,7 +26,7 @@ class SecretModeratorView(APIView):
         return Response({"message": f"Секретная панель! Твоя роль: {request.user.role}."})
 
 
-    from rest_framework.views import APIView
+from rest_framework.views import APIView
 from rest_framework import status
 from rest_framework_simplejwt.views import TokenObtainPairView
 from rest_framework.response import Response
@@ -87,9 +91,6 @@ class UserProfileView(APIView):
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
     
-
-
-
 class GoogleAuthView(APIView):
     permission_classes = [AllowAny]
 
@@ -148,3 +149,27 @@ class GoogleAuthView(APIView):
                 "access": str(refresh.access_token),
             }
         }, status=status.HTTP_200_OK)
+
+    
+# 🧠 А ВОТ ПРИМЕР С REDIS KЭШЕМ (Кэширование списка юзеров для Админа)
+class AdminUsersListView(APIView):
+    """Пример ручки с простым и понятным кэшированием через Redis."""
+    
+    def get(self, request):
+        cache_key = "all_users_list"
+        
+        # 1. Проверяем, есть ли готовый список в Redis
+        cached_data = cache.get(cache_key)
+        if cached_data:
+            print("--- ОТДАЕМ ДАННЫЕ ИЗ REDIS КЭША ---")
+            return Response(cached_data)
+
+        # 2. Если в Redis пусто — запрашиваем из базы PostgreSQL
+        print("--- ДЕЛАЕМ ЗАПРОС К БАЗЕ ДАННЫХ PostgreSQL ---")
+        users = User.objects.all().values("id", "email", "role", "is_active")
+        data = list(users)
+
+        # 3. Кладем результат в Redis на 60 секунд
+        cache.set(cache_key, data, timeout=60)
+
+        return Response(data)

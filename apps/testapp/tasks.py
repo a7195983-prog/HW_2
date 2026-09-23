@@ -1,0 +1,62 @@
+import time
+
+from celery import shared_task
+from django.contrib.auth import get_user_model
+
+
+User = get_user_model()
+
+
+@shared_task
+def send_welcome_email_task(user_email: str):
+    """Send a welcome email asynchronously."""
+    time.sleep(3)
+    print(f"[Celery Worker] Welcome email sent to {user_email}")
+    return f"Email sent to {user_email}"
+
+
+@shared_task
+def monthly_user_stats_task():
+    """Collect the current user statistics for the scheduled report."""
+    total_users = User.objects.count()
+    active_users = User.objects.filter(is_active=True).count()
+    report = (
+        f"[Celery Beat Report] Total users: {total_users}, "
+        f"Active users: {active_users}"
+    )
+    print(report)
+    return report
+
+
+# 💥 ПРИМЕР 1: Фоновая задача (Worker)
+# Реальный кейс: При регистрации отправляем приветственное письмо.
+# Запрос к почтовому серверу занимает 2-4 секунды. Если делать синхронно — фронт зависнет.
+@shared_task
+def send_welcome_email_task(user_email: str):
+    """Отправка приветственного письма в фоновом режиме."""
+    # Имитируем задержку сети
+    time.sleep(3)
+    
+    # Реальная отправка (требует настроек EMAIL_HOST в settings.py)
+    # send_mail(
+    #     subject="Добро пожаловать!",
+    #     message="Спасибо за регистрацию на нашей платформе!",
+    #     from_email="noreply@myproject.com",
+    #     recipient_list=[user_email],
+    # )
+    
+    print(f"[Celery Worker] Успешно отправлено письмо для {user_email}")
+    return f"Email sent to {user_email}"
+
+
+# ⏰ ПРИМЕР 2: Периодическая задача (Beat)
+# Реальный кейс: Каждую ночь очищать inactive/unverified пользователей или собирать статистику.
+@shared_task
+def monthly_user_stats_task():
+    """Считает общее количество пользователей и выводит статистику."""
+    total_users = User.objects.count()
+    active_users = User.objects.filter(is_active=True).count()
+    
+    report = f"[Celery Beat Report] Всего юзеров: {total_users}, Активных: {active_users}"
+    print(report)
+    return report
