@@ -2,8 +2,11 @@ import os
 from pathlib import Path
 from django.utils.translation import gettext_lazy as _
 from dotenv import load_dotenv
+<<<<<<< HEAD
 from datetime import timedelta
 from celery.schedules import crontab
+=======
+>>>>>>> 12b55f2d08036b04e3e3a7a0a069b92c45a704d9
 from core.settings.jazzmin import JAZZMIN_SETTINGS
 
 load_dotenv()
@@ -34,6 +37,10 @@ DJANGO_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
+<<<<<<< HEAD
+=======
+    'rest_framework', 
+>>>>>>> 12b55f2d08036b04e3e3a7a0a069b92c45a704d9
 ]
 
 LIBRARY_APPS = [
@@ -181,6 +188,7 @@ CKEDITOR_5_CONFIGS = {
     'minimal': {
         'toolbar': ['bold', 'italic', 'link'],
     },
+<<<<<<< HEAD
 }
 
 
@@ -241,3 +249,6 @@ CELERY_BEAT_SCHEDULE = {
         'schedule': crontab(hour=0, minute=0),
     },
 }
+=======
+}
+>>>>>>> 12b55f2d08036b04e3e3a7a0a069b92c45a704d9
